@@ -18,9 +18,9 @@ impl From<u8> for CeasarCipherStream {
 impl From<CeasarCipherStream> for u8 {
     fn from(value: CeasarCipherStream) -> Self {
         return match value {
-            CeasarCipherStream(52) => 0x20, 
-            CeasarCipherStream(0..=25) => value.0 + 65, 
-            CeasarCipherStream(26..=51) => value.0 + 71, 
+            CeasarCipherStream(52) => 0x20,
+            CeasarCipherStream(0..=25) => value.0 + 65,
+            CeasarCipherStream(26..=51) => value.0 + 71,
             _ => panic!("Value outside of range [A-Z,a-z,whitespace]"),
         };
     }
@@ -35,13 +35,15 @@ impl CeasarCipherStream {
             self.0 += value
         }
     }
-    // fn unshift(&mut self, value: u8) {
-    //     if (self.0 - value) > 52 {
-    //         self.0 += value % 53
-    //     } else {
-    //         self.0 += value
-    //     }
-    // }
+    fn unshift(&mut self, value: u8) {
+        let mut ushift = self.0 as i16 - value as i16;
+
+        while ushift < 0 {
+            ushift += 53;
+        }
+
+        self.0 = (ushift % 53) as u8
+    }
 }
 
 // General functions
@@ -54,7 +56,8 @@ fn u8vec_to_streamvec(u8vec: Vec<u8>) -> Vec<CeasarCipherStream> {
     stream
 }
 
-fn streamvec_to_u8vec(stream_vec: Vec<CeasarCipherStream>) -> Vec<u8> { // css_vec = Ceasar Cipher Stream Vector
+fn streamvec_to_u8vec(stream_vec: Vec<CeasarCipherStream>) -> Vec<u8> {
+    // css_vec = Ceasar Cipher Stream Vector
     let mut stream: Vec<u8> = Vec::with_capacity(stream_vec.len());
     for i in stream_vec {
         stream.push(u8::from(i));
@@ -79,6 +82,16 @@ pub fn encode(value: String, shift_val: u8) -> Result<String, FromUtf8Error> {
     return String::from_utf8(streamvec_to_u8vec(stream));
 }
 
-// pub fn decode(value: String, shift_val: u8) -> Result<String, FromUtf8Error> {
-// todo!()
-// }
+pub fn decode(value: String, shift_val: u8) -> Result<String, FromUtf8Error> {
+    if shift_val == 0 {
+        return Ok(value);
+    }
+    let bytes: Vec<u8> = value.as_bytes().to_vec();
+    let mut stream = u8vec_to_streamvec(bytes);
+
+    for i in &mut stream {
+        i.unshift(shift_val)
+    }
+
+    return String::from_utf8(streamvec_to_u8vec(stream));
+}
