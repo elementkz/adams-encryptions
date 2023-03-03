@@ -95,3 +95,18 @@ pub fn decode(value: String, shift_val: u8) -> Result<String, FromUtf8Error> {
 
     return String::from_utf8(streamvec_to_u8vec(stream));
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encode() {
+        assert_eq!(encode(String::from("Hello World"), 5), Ok(String::from("MjqqtEbtwqi")));
+    }
+
+    #[test]
+    fn test_decode() {
+        assert_eq!(decode(String::from("MjqqtEbtwqi"), 5), Ok(String::from("Hello World")));
+    }
+}
